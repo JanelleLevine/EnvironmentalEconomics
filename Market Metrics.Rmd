@@ -3,14 +3,14 @@ title: 'Market Metrics: Valuing Ecosystem Services with R'
 author: "Janelle"
 date: "`r Sys.Date()`"
 output:
+  pdf_document: default
   word_document: default
   html_document: default
-  pdf_document: default
 ---
 
 ## Introduction
 
-This tutorial demonstrates how to use a market-based approach to value ecosystem services in R. We will go through data generation, loading, analysis, and advanced economic calculations.
+This tutorial outlines the process of valuing ecosystem services using a market-based approach in R. It employs a hypothetical dataset, **`timber_data.csv`**, available in the accompanying GitHub repository. The steps covered include data loading, analysis, and advanced economic calculations.
 
 ## Setup
 
@@ -28,36 +28,6 @@ if(length(new_packages)) install.packages(new_packages)
 lapply(packages, library, character.only = TRUE)
 ```
 
-### Create Data
-
-```{# {r}
-# # Set seed for reproducibility
-# set.seed(123)
-# 
-# # Generate dates for one year of monthly data
-# dates <- seq.Date(from = as.Date("2021-01-01"), by = "month", length.out = 12)
-# 
-# # Generate random prices around a mean value, simulating market fluctuations
-# prices <- round(runif(12, min = 100, max = 130), 2)
-# 
-# # Generate quantities sold, inversely related to prices to simulate demand elasticity
-# quantities <- round(70 - (prices - 100))
-# 
-# # Create a data frame
-# timber_data <- data.frame(Date = dates, Price_per_Unit = prices, Quantity_Sold = quantities)
-# 
-# # Print the data frame
-# print(timber_data)
-
-```
-
-### Save to CSV File
-
-```{r}
-# # Save the dataset to a CSV file
-# write.csv(timber_data, "timber_data.csv", row.names = FALSE)
-```
-
 ### Load Data
 
 ```{r}
@@ -73,6 +43,14 @@ head(timber_data)
 
 ### Basic Statistics
 
+Let's calculate some basic statistics for this dataset.
+
+Total Revenue: Total revenue represents the total income generated from selling timber and is a fundamental metric for understanding the scale and success of sales activities.
+
+Average Price per Unit: This metric provides insight into the average cost at which timber is sold per unit. It helps in understanding pricing strategies and market positioning. By comparing this average price to those of competitors or across different time periods, analysts can gauge pricing trends, effectiveness of pricing strategies, and overall market conditions.
+
+Total Quantity Sold: The total quantity sold gives a direct measure of market demand satisfaction over the observed period. This figure is vital for inventory management, supply chain planning, and assessing market penetration. It indicates the volume of product moved and can help in planning production, logistics, and forecasting future sales based on past trends.
+
 ```{r}
 # Calculate total revenue
 timber_data$Total_Revenue <- timber_data$Price_per_Unit * timber_data$Quantity_Sold
@@ -87,53 +65,9 @@ cat("Average Price per Unit: ", average_price, "\n")
 cat("Total Quantity Sold: ", total_quantity, "\n")
 ```
 
-### Visualization
-
-```{# {r}
-# # Plot price trend
-# ggplot(timber_data, aes(x = Quantity_Sold, y = Price_per_Unit)) +
-#   geom_point() +
-#   ggtitle("Price Trend of Timber") +
-#   geom_smooth(method = "lm", se = TRUE, color = "blue") +
-#   xlab("Quantity Sold") + ylab("Price per Unit ($)")
-# 
-# # Plot quantity sold trend
-# ggplot(timber_data, aes(x = Date, y = Quantity_Sold)) +
-#   geom_point(color = "blue") +
-#   ggtitle("Quantity Sold of Timber") +
-#   xlab("Date") + ylab("Quantity (Units)")
-# 
-# # Plot total revenue trend
-# ggplot(timber_data, aes(x = Date, y = Total_Revenue)) +
-#   geom_point(color = "green") +
-#   ggtitle("Total Revenue from Timber Sales") +
-#   xlab("Date") + ylab("Total Revenue ($)")
-# 
-# library(tidyverse)
-# 
-# # Assuming your data frame is called timber_data
-# timber_data_long <- timber_data %>%
-#   pivot_longer(
-#     cols = c(Price_per_Unit, Quantity_Sold, Total_Revenue), 
-#     names_to = "Variable", 
-#     values_to = "Value"
-#   )
-# 
-# # Plotting all trends together
-# ggplot(timber_data_long, aes(x = Date, y = Value, color = Variable)) +
-#   geom_point() + # or geom_point() if you prefer points
-#   labs(title = "Timber Sales Analysis", 
-#        x = "Date", 
-#        y = "Value", 
-#        color = "Metric") +
-#   scale_color_manual(values = c("Price_per_Unit" = "red", "Quantity_Sold" = "blue", "Total_Revenue" = "green")) +
-#   theme_minimal()
-
-```
-
-## Advanced Analysis
-
 ### Economic Value
+
+The calculation for "Total Economic Value of Timber Sales" involves multiplying the total quantity sold by the average price per unit. This metric is a theoretical aggregate value, representing the total revenue that could be generated if all units were sold at the average unit price. It's useful for assessing potential revenue under uniform pricing conditions and helps in understanding the overall economic impact of the sales.
 
 ```{r}
 # Calculate Total Economic Value
@@ -157,27 +91,13 @@ consumer_surplus <- sum((max_willingness_to_pay - timber_data$Price_per_Unit) * 
 cat("Total Consumer Surplus: ", consumer_surplus, "\n")
 ```
 
-### Impact of Changes
+The values of producer surplus and consumer surplus we've calculated—\$22,819.9 for producer surplus and \$11,445.1 for consumer surplus—provide a measure of the economic welfare or benefits derived from the market transactions involving timber. Here's how to interpret these numbers:
 
-```{r}
-# Simulate an increase in production cost
-new_cost_per_unit <- average_cost_per_unit + 20  # Increased cost by $20
+1.  **Producer Surplus (\$22,819.9)**: This number suggests that producers are receiving a significant amount above their minimum selling price (cost), which indicates healthy profitability or gains from the timber sales in the given dataset. A higher producer surplus often implies that producers are doing well, potentially due to favorable market conditions or effective production strategies.
 
-# Recalculate Producer Surplus with new cost
-new_producer_surplus <- sum((timber_data$Price_per_Unit - new_cost_per_unit) * timber_data$Quantity_Sold)
-cat("New Producer Surplus after Cost Increase: ", new_producer_surplus, "\n")
+2.  **Consumer Surplus (\$11,445.1)**: This figure indicates that consumers are also gaining from the transactions, as they are paying less than their maximum willingness to pay for the timber. However, the consumer surplus is roughly half that of the producer surplus, suggesting that consumers gain less compared to producers. This could imply that the market conditions are more favorable to producers or that consumers have fewer alternatives and must accept the prices offered to a greater extent.
 
-# Plotting the impact on Producer Surplus
-old_vs_new_surplus <- data.frame(Type = c("Original", "After Cost Increase"),
-                                 Surplus = c(producer_surplus, new_producer_surplus))
-ggplot(old_vs_new_surplus, aes(x = Type, y = Surplus, fill = Type)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Impact of Cost Increase on Producer Surplus") +
-  ylab("Producer Surplus ($)") +
-  xlab("")
-```
-
-# Second Attempt
+**Market Implications**: The disparities between producer and consumer surpluses might suggest a need to look at market dynamics more closely. If consumer surplus is significantly lower consistently, it could indicate issues like low competition among suppliers or high price sensitivity among consumers.
 
 ## Demand Analysis
 
@@ -220,33 +140,33 @@ ggplot(timber_data, aes(x = Consumer_Income, y = Quantity_Sold)) +
   labs(title = "Demand vs Consumer Income", x = "Consumer Income", y = "Quantity Sold")
 ```
 
-### **Regression Summary:**
+### **1. Regression Summary**
 
--   **R-squared:** 0.999 - This suggests that our model explains 99.9% of the variability in the quantity of timber sold, indicating a very good fit.
+-   **Residual Standard Error**: This is relatively low at 0.3439, suggesting that the model predictions are generally close to the observed values.
 
--   **Adjusted R-squared:** 0.998 - Adjusted for the number of predictors, still showing a very strong fit.
+-   **Multiple R-squared (0.999)**: Indicates that 99.9% of the variability in the quantity of timber sold can be explained by the independent variables included in the model. This is exceptionally high, suggesting a strong model.
 
-### **Coefficients:**
+-   **Adjusted R-squared (0.9985)**: Similar to the R-squared, but adjusted for the number of predictors in the model. This high value also supports the effectiveness of the model.
 
--   **Intercept (Constant):** 171.022 (significant)
+-   **F-statistic (1784 on 4 and 7 DF)**: Demonstrates that the model is statistically significant, meaning the independent variables provide a good fit for predicting the dependent variable.
 
--   **Price_per_Unit:** -0.9913 - This indicates that for each unit increase in price, the quantity of timber sold decreases by approximately 0.99 units. This coefficient is significant.
+### **2. Coefficients**
 
--   **Consumer_Income:** -0.00002797 - Suggests a very small negative impact of consumer income on quantity sold, but this coefficient is not statistically significant (p = 0.173).
+-   **Intercept (171.0)**: The expected quantity of timber sold when all independent variables are zero. This is a hypothetical scenario but gives a baseline against which to compare other values.
 
--   **Substitute_Price:** -0.0027 - Indicates a negative relationship with the quantity sold, though this effect is not statistically significant (p = 0.750).
+-   **Price_per_Unit (-0.9913)**: Indicates that as the price per unit of timber increases by one unit, the quantity sold decreases by approximately 0.991 units. This negative relationship is typical in demand analysis, reflecting the law of demand (price and quantity demanded are inversely related).
 
--   **Complement_Price:** -0.0011 - Also shows a negative relationship, but like the others, it is not significant (p = 0.871).
+-   **Consumer_Income (-0.00002797)**: Suggests a very slight negative effect of consumer income on the quantity of timber sold, though this effect is not statistically significant (p-value: 0.173). Theoretically, we might expect higher income to increase demand, but other factors might be influencing this relationship.
 
-### **Diagnostics:**
+-   **Substitute_Price (-0.00267)** and **Complement_Price (-0.001063)**: Both coefficients are negative, indicating that increases in prices of substitutes and complements lead to a decrease in timber quantity sold, but neither is significant. This could mean these variables do not strongly influence timber demand or there may be data issues or model specification problems.
 
--   **Condition Number:** 1.05e+06 - This suggests potential issues with multicollinearity, meaning that some independent variables might be highly correlated with each other, affecting the stability and interpretation of our coefficient estimates.
+### **3. Observations**
 
-### **Observations:**
+-   The model is very effective in explaining the variation in timber demand, as evidenced by the high R-squared values.
 
--   The model fits the data very well based on the R-squared value. However, except for the price per unit, other variables (Consumer Income, Substitute Price, and Complement Price) do not significantly affect the quantity sold according to this analysis.
+-   The significant negative coefficient for price per unit is consistent with economic theory but pay attention to variables like consumer income and prices of substitutes and complements. Their non-significant relationships suggest they might not be as influential, or other unmodeled factors could be at play.
 
--   Given the potential multicollinearity issue, we might consider checking correlations among predictors and potentially simplifying the model or using techniques like Principal Component Analysis (PCA) to address multicollinearity.
+-   The data or the model might need refinement to capture more nuanced effects, especially concerning income and prices of related goods.
 
 ## Supply Side Analysis
 
@@ -295,27 +215,29 @@ ggplot() +
   theme_minimal()
 ```
 
-### **Regression Summary:**
+### **1. Regression Summary**
 
--   **R-squared:** 0.999 - This suggests that the model explains 99.9% of the variability in the quantity of timber supplied, indicating a very good fit.
+-   **Residual Standard Error**: 3.816, indicating the average distance that the observed values fall from the regression line. Considering this value in the context of the quantity of timber, evaluate if this deviation is acceptable within your operational parameters.
 
--   **Adjusted R-squared:** 0.998 - Adjusted for the number of predictors, still showing a very strong fit.
+-   **Multiple R-squared (0.8277)**: This suggests that about 82.77% of the variability in the quantity of timber supplied can be explained by the cost per unit. This is a strong model, showing a significant impact of costs on supply.
 
-### **Coefficients:**
+-   **Adjusted R-squared (0.8104)**: Adjusted for the number of predictors, the value remains robust, indicating a strong explanatory power of the model.
 
--   **Intercept (Constant):** 129.9739 - This represents the quantity of timber supplied when the cost per unit is zero, which is theoretically significant.
+-   **F-statistic (48.02 on 1 and 10 DF)**: The model is highly significant, confirming that the cost per unit is a crucial factor influencing the supply of timber.
 
--   **Cost_per_Unit:** -0.7507 - Indicates that for each unit increase in cost, the quantity of timber supplied decreases by approximately 0.75 units. This coefficient is highly significant (p \< 0.001).
+### **2. Coefficients**
 
-### **Observations:**
+-   **Intercept (-19.14933)**: The model estimates that if the cost per unit were zero, the quantity of timber supplied would be approximately -19.149 units. This might be an unrealistic scenario given that costs cannot be zero, but it serves as a mathematical reference point.
 
--   The negative coefficient for **`Cost_per_Unit`** suggests a typical supply behavior where higher costs lead to a decrease in the quantity supplied. This is an expected outcome in economic theory where higher production costs make it less attractive for producers to supply more goods.
+-   **Cost_per_Unit (0.68350)**: For every one unit increase in cost per unit, the quantity of timber supplied increases by approximately 0.683 units. This positive relationship suggests that higher production costs are associated with an increased quantity of timber supplied, which may seem counterintuitive. This could be due to several factors, such as the pricing strategies where higher costs are passed on to prices or higher costs associated with producing more valuable timber.
 
--   The high R-squared value indicates that the model fits the data exceptionally well, capturing nearly all the variability in quantity supplied by the cost changes alone.
+### **3. Graphical Analysis**
 
-### **Next Steps:**
+-   The scatter plot with a regression line will visually represent the relationship between cost per unit and quantity sold. The positive slope of the regression line will confirm the positive relationship as indicated by the regression coefficient.
 
-Given the strong results from this supply side analysis, we can now proceed to calculate the price elasticity of demand and supply. This will help us understand how responsive the quantity demanded and supplied is to changes in the price of timber.
+### **4. Economic Interpretation**
+
+-   The positive correlation between cost and quantity supplied might suggest that producers are able to pass on higher costs to consumers effectively, or it might indicate that higher costs are related to higher-quality or more valuable timber, which can be sold in greater quantities despite higher prices. It’s also possible that your model captures an aspect of the supply dynamics where increases in cost (perhaps due to investments in technology or better materials) lead to greater production efficiency or capacity.
 
 ## Elasticity of Supply and Demand
 
@@ -356,33 +278,58 @@ print(paste("Price Elasticity of Demand:", ped))
 print(paste("Price Elasticity of Supply:", pes))
 ```
 
-```{r}
-# Create a data frame for elasticities
-elasticities <- data.frame(
-  Type = c("PED", "PES"),
-  Elasticity = c(ped, pes)
-)
+### **Price Elasticity of Demand (PED): -2.2527**
 
-# Plotting Elasticities
-ggplot(elasticities, aes(x = Type, y = Elasticity, fill = Type)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Price Elasticity of Demand and Supply", x = "Type", y = "Elasticity Value") +
-  geom_text(aes(label = round(Elasticity, 2)))
+-   **Interpretation**: The price elasticity of demand of -2.2527 indicates that demand for timber is elastic. This means that a 1% increase in the price of timber leads to a more than proportional 2.2527% decrease in the quantity demanded.
 
-```
+-   **Implications**: Since demand is elastic, changes in price have a significant impact on the quantity demanded. This sensitivity suggests that pricing strategies could strongly influence demand volumes. For example, lowering prices could significantly increase demand, while raising prices might lead to a notable drop in sales. Marketers and policymakers need to be cautious with price adjustments, as consumers are quite responsive to price changes.
 
-### **Price Elasticity of Demand (PED):**
+### **Price Elasticity of Supply (PES): 1.3688**
 
--   **PED = -2.25**
+-   **Interpretation**: The price elasticity of supply of 1.3688 indicates that supply is also elastic, though less so compared to demand. This value means that a 1% increase in the cost leads to a 1.3688% increase in the quantity supplied.
 
-    -   This indicates that the quantity demanded is elastic with respect to price changes. A 1% increase in price leads to a 2.25% decrease in the quantity demanded. This level of elasticity suggests that consumers are quite sensitive to price changes when it comes to purchasing timber.
+-   **Implications**: The elastic nature of supply suggests that producers are relatively responsive to changes in cost, which might reflect changes in market conditions or production costs. An increase in costs, perhaps due to higher raw material costs or improvements in production technology, is likely to be passed onto the market in the form of increased production.
 
-### **Price Elasticity of Supply (PES):**
+### **Overall Market Dynamics:**
 
--   **PES = -1.50**
+-   **Demand Side**: The highly elastic demand suggests that consumers are price sensitive, which could be due to the availability of substitutes or the discretionary nature of timber in certain uses.
 
-    -   The quantity supplied is also elastic, meaning that a 1% increase in cost leads to a 1.50% decrease in the quantity supplied. This shows that suppliers are also sensitive to changes in cost.
+-   **Supply Side**: The elasticity of supply being greater than 1 but less than the elasticity of demand suggests a market where producers can respond to cost changes effectively but are slightly less sensitive than consumers to price changes.
 
-### **Interpretation:**
+## Conclusions
 
--   Both demand and supply in this market are elastic, which means price and cost changes can significantly influence market quantities. This sensitivity to price and cost changes should be carefully considered in pricing strategies, production planning, and policy making to avoid large fluctuations in the market.
+### **1. Economic Welfare (Producer and Consumer Surplus)**
+
+-   **Producer Surplus** is significantly higher than Consumer Surplus, indicating that producers are benefiting more from the current market conditions than consumers. This could suggest that producers have greater market power or efficiency.
+
+-   **Consumer Surplus**, while substantial, is less than Producer Surplus, implying that consumers are paying prices closer to their maximum willingness to pay.
+
+### **2. Demand Side Analysis**
+
+-   The regression model showed a strong predictive capability with a high R-squared value, indicating that the price of timber and other factors like consumer income, substitute, and complement prices significantly impact the quantity of timber demanded.
+
+-   The price elasticity of demand is highly elastic, demonstrating that consumers are very sensitive to price changes. This elasticity suggests that pricing strategies could significantly impact demand volumes.
+
+### **3. Supply Side Analysis**
+
+-   The supply model also indicated a strong relationship between production costs and the quantity of timber supplied, with cost increases generally leading to increases in supply.
+
+-   The price elasticity of supply being elastic (though less so than demand) suggests that producers can somewhat flexibly adjust their production in response to changes in costs.
+
+### **4. Market Dynamics**
+
+-   Both demand and supply are elastic, but demand is more elastic than supply. This dynamic can lead to significant volatility in the market, as both prices and quantities can fluctuate widely in response to external economic forces.
+
+-   The analysis suggests a market where both producers and consumers react notably to changes in prices and costs. This could lead to instability in certain conditions but also provides opportunities for strategic adjustments in pricing and production to maximize economic outcomes.
+
+### **5. Strategic Implications**
+
+-   **Producers** should consider cost management strategies carefully, as their costs directly influence supply quantities. They might also explore ways to differentiate products or improve efficiency to better manage price changes.
+
+-   **Consumers**' sensitivity to price changes suggests that any policy or economic condition affecting prices could lead to significant shifts in demand. Policymakers and businesses should consider the impacts of pricing strategies on consumer demand.
+
+### **6. Policy Recommendations**
+
+-   Policymakers should ensure that market conditions are conducive to fair competition to prevent producers from exploiting their market power excessively, given the higher producer surplus.
+
+-   Regulations or interventions may be needed to stabilize the market, especially if the high elasticity on both the demand and supply sides leads to significant fluctuations that could impact economic stability.
