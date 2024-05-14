@@ -1,0 +1,388 @@
+---
+title: 'Market Metrics: Valuing Ecosystem Services with R'
+author: "Janelle"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+## Introduction
+
+This tutorial demonstrates how to use a market-based approach to value ecosystem services in R. We will go through data generation, loading, analysis, and advanced economic calculations.
+
+## Setup
+
+### Load Required Packages
+
+```{r setup-packages, message=FALSE}
+# List of required packages
+packages <- c("dplyr", "ggplot2", "readr", "stats")
+
+# Install any packages that are not already installed
+new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+
+# Load the packages
+lapply(packages, library, character.only = TRUE)
+```
+
+### Create Data
+
+```{# {r}
+# # Set seed for reproducibility
+# set.seed(123)
+# 
+# # Generate dates for one year of monthly data
+# dates <- seq.Date(from = as.Date("2021-01-01"), by = "month", length.out = 12)
+# 
+# # Generate random prices around a mean value, simulating market fluctuations
+# prices <- round(runif(12, min = 100, max = 130), 2)
+# 
+# # Generate quantities sold, inversely related to prices to simulate demand elasticity
+# quantities <- round(70 - (prices - 100))
+# 
+# # Create a data frame
+# timber_data <- data.frame(Date = dates, Price_per_Unit = prices, Quantity_Sold = quantities)
+# 
+# # Print the data frame
+# print(timber_data)
+
+```
+
+### Save to CSV File
+
+```{r}
+# # Save the dataset to a CSV file
+# write.csv(timber_data, "timber_data.csv", row.names = FALSE)
+```
+
+### Load Data
+
+```{r}
+
+# Load the dataset
+timber_data <- read.csv("timber_data.csv")
+
+# Check the first few rows of the dataset
+head(timber_data)
+```
+
+## Data Analysis
+
+### Basic Statistics
+
+```{r}
+# Calculate total revenue
+timber_data$Total_Revenue <- timber_data$Price_per_Unit * timber_data$Quantity_Sold
+
+# Calculate and print total revenue, average price, and total quantity sold
+total_revenue <- sum(timber_data$Total_Revenue)
+average_price <- mean(timber_data$Price_per_Unit)
+total_quantity <- sum(timber_data$Quantity_Sold)
+
+cat("Total Revenue: ", total_revenue, "\n")
+cat("Average Price per Unit: ", average_price, "\n")
+cat("Total Quantity Sold: ", total_quantity, "\n")
+```
+
+### Visualization
+
+```{# {r}
+# # Plot price trend
+# ggplot(timber_data, aes(x = Quantity_Sold, y = Price_per_Unit)) +
+#   geom_point() +
+#   ggtitle("Price Trend of Timber") +
+#   geom_smooth(method = "lm", se = TRUE, color = "blue") +
+#   xlab("Quantity Sold") + ylab("Price per Unit ($)")
+# 
+# # Plot quantity sold trend
+# ggplot(timber_data, aes(x = Date, y = Quantity_Sold)) +
+#   geom_point(color = "blue") +
+#   ggtitle("Quantity Sold of Timber") +
+#   xlab("Date") + ylab("Quantity (Units)")
+# 
+# # Plot total revenue trend
+# ggplot(timber_data, aes(x = Date, y = Total_Revenue)) +
+#   geom_point(color = "green") +
+#   ggtitle("Total Revenue from Timber Sales") +
+#   xlab("Date") + ylab("Total Revenue ($)")
+# 
+# library(tidyverse)
+# 
+# # Assuming your data frame is called timber_data
+# timber_data_long <- timber_data %>%
+#   pivot_longer(
+#     cols = c(Price_per_Unit, Quantity_Sold, Total_Revenue), 
+#     names_to = "Variable", 
+#     values_to = "Value"
+#   )
+# 
+# # Plotting all trends together
+# ggplot(timber_data_long, aes(x = Date, y = Value, color = Variable)) +
+#   geom_point() + # or geom_point() if you prefer points
+#   labs(title = "Timber Sales Analysis", 
+#        x = "Date", 
+#        y = "Value", 
+#        color = "Metric") +
+#   scale_color_manual(values = c("Price_per_Unit" = "red", "Quantity_Sold" = "blue", "Total_Revenue" = "green")) +
+#   theme_minimal()
+
+```
+
+## Advanced Analysis
+
+### Economic Value
+
+```{r}
+# Calculate Total Economic Value
+economic_value <- total_quantity * average_price
+cat("Total Economic Value of Timber Sales: ", economic_value, "\n")
+```
+
+### Consumer and Producer Surplus
+
+```{r}
+# Assumptions for costs and maximum willingness to pay
+average_cost_per_unit <- 80  # Hypothetical average cost
+max_willingness_to_pay <- 135  # Hypothetical maximum price consumers are willing to pay
+
+# Calculate Producer Surplus
+producer_surplus <- sum((timber_data$Price_per_Unit - average_cost_per_unit) * timber_data$Quantity_Sold)
+cat("Total Producer Surplus: ", producer_surplus, "\n")
+
+# Calculate Consumer Surplus (simplified estimation)
+consumer_surplus <- sum((max_willingness_to_pay - timber_data$Price_per_Unit) * timber_data$Quantity_Sold)
+cat("Total Consumer Surplus: ", consumer_surplus, "\n")
+```
+
+### Impact of Changes
+
+```{r}
+# Simulate an increase in production cost
+new_cost_per_unit <- average_cost_per_unit + 20  # Increased cost by $20
+
+# Recalculate Producer Surplus with new cost
+new_producer_surplus <- sum((timber_data$Price_per_Unit - new_cost_per_unit) * timber_data$Quantity_Sold)
+cat("New Producer Surplus after Cost Increase: ", new_producer_surplus, "\n")
+
+# Plotting the impact on Producer Surplus
+old_vs_new_surplus <- data.frame(Type = c("Original", "After Cost Increase"),
+                                 Surplus = c(producer_surplus, new_producer_surplus))
+ggplot(old_vs_new_surplus, aes(x = Type, y = Surplus, fill = Type)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Impact of Cost Increase on Producer Surplus") +
+  ylab("Producer Surplus ($)") +
+  xlab("")
+```
+
+# Second Attempt
+
+## Demand Analysis
+
+Let’s start with the demand estimation for timber. We'll use a regression model to analyze how factors like consumer income, substitute prices, and complement prices influence the quantity of timber demanded. This analysis can help us understand the relationships and dependencies among these variables.
+
+We'll perform the following steps:
+
+1.  Prepare the data for analysis.
+2.  Fit a linear regression model with Quantity_Sold as the dependent variable and Price_per_Unit, Consumer_Income, Substitute_Price, and Complement_Price as independent variables.
+3.  Evaluate the model to see how well these variables explain the quantity of timber demanded.
+
+```{r}
+# Prepare the data for regression
+# Selecting the variables needed for the regression model
+#timber_data <- timber_data %>%
+#  select(Quantity_Sold, Price_per_Unit, Consumer_Income, Substitute_Price, Complement_Price)
+
+# Fit the linear regression model
+demand_model <- lm(Quantity_Sold ~ Price_per_Unit + Consumer_Income + Substitute_Price + Complement_Price, data = timber_data)
+
+# Display the summary of the regression model
+summary(demand_model)
+
+# Check for multicollinearity (optional)
+library(car)
+vif(demand_model)  # Variance inflation factor to check multicollinearity
+```
+
+```{r}
+# Demand vs Price
+ggplot(timber_data, aes(x = Price_per_Unit, y = Quantity_Sold)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Demand vs Price", x = "Price per Unit", y = "Quantity Sold")
+
+# Demand vs Consumer Income
+ggplot(timber_data, aes(x = Consumer_Income, y = Quantity_Sold)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Demand vs Consumer Income", x = "Consumer Income", y = "Quantity Sold")
+```
+
+### **Regression Summary:**
+
+-   **R-squared:** 0.999 - This suggests that our model explains 99.9% of the variability in the quantity of timber sold, indicating a very good fit.
+
+-   **Adjusted R-squared:** 0.998 - Adjusted for the number of predictors, still showing a very strong fit.
+
+### **Coefficients:**
+
+-   **Intercept (Constant):** 171.022 (significant)
+
+-   **Price_per_Unit:** -0.9913 - This indicates that for each unit increase in price, the quantity of timber sold decreases by approximately 0.99 units. This coefficient is significant.
+
+-   **Consumer_Income:** -0.00002797 - Suggests a very small negative impact of consumer income on quantity sold, but this coefficient is not statistically significant (p = 0.173).
+
+-   **Substitute_Price:** -0.0027 - Indicates a negative relationship with the quantity sold, though this effect is not statistically significant (p = 0.750).
+
+-   **Complement_Price:** -0.0011 - Also shows a negative relationship, but like the others, it is not significant (p = 0.871).
+
+### **Diagnostics:**
+
+-   **Condition Number:** 1.05e+06 - This suggests potential issues with multicollinearity, meaning that some independent variables might be highly correlated with each other, affecting the stability and interpretation of our coefficient estimates.
+
+### **Observations:**
+
+-   The model fits the data very well based on the R-squared value. However, except for the price per unit, other variables (Consumer Income, Substitute Price, and Complement Price) do not significantly affect the quantity sold according to this analysis.
+
+-   Given the potential multicollinearity issue, we might consider checking correlations among predictors and potentially simplifying the model or using techniques like Principal Component Analysis (PCA) to address multicollinearity.
+
+## Supply Side Analysis
+
+Now, we'll move on to the supply side analysis. We'll examine how the cost per unit influences the quantity of timber supplied. This analysis helps us understand the production side of the market, specifically how changes in production costs impact the quantity of timber that producers are willing to supply at different price levels.
+
+For this analysis, we'll:
+
+1.  Use a linear regression model with **`Quantity_Sold`** as the dependent variable and **`Cost_per_Unit`** as the independent variable.
+
+2.  Fit the model and evaluate the coefficients to understand the relationship between cost and supply.
+
+```{r}
+# Fit the linear regression model for the supply side
+supply_model <- lm(Quantity_Sold ~ Cost_per_Unit, data = timber_data)
+
+# Display the summary of the regression model
+summary(supply_model)
+```
+
+```{r}
+# Cost vs Quantity Supplied
+ggplot(timber_data, aes(x = Cost_per_Unit, y = Quantity_Sold)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "green") +
+  labs(title = "Supply Side Analysis: \nCost vs Quantity Supplied", x = "Cost per Unit", y = "Quantity Sold")
+
+```
+
+```{r}
+# Generate a sequence of prices for predictions
+price_range <- seq(from = min(timber_data$Price_per_Unit), to = max(timber_data$Price_per_Unit), length.out = 100)
+
+# Predict quantities for demand and supply based on the price range
+demand_predictions <- predict(demand_model, newdata = data.frame(Price_per_Unit = price_range, Consumer_Income = mean(timber_data$Consumer_Income), Substitute_Price = mean(timber_data$Substitute_Price), Complement_Price = mean(timber_data$Complement_Price)))
+supply_predictions <- predict(supply_model, newdata = data.frame(Cost_per_Unit = price_range))
+
+# Create a data frame for plotting
+plot_data <- data.frame(Price = price_range, Demand = demand_predictions, Supply = supply_predictions)
+
+# Plotting Demand vs. Supply
+ggplot() +
+  geom_line(data = plot_data, aes(x = Price, y = Demand, color = "Demand"), size = 1.2) +
+  geom_line(data = plot_data, aes(x = Price, y = Supply, color = "Supply"), size = 1.2) +
+  labs(title = "Supply vs. Demand", x = "Price per Unit", y = "Quantity") +
+  scale_color_manual(values = c("Demand" = "blue", "Supply" = "red"), labels = c("Demand", "Supply")) +
+  theme_minimal()
+```
+
+### **Regression Summary:**
+
+-   **R-squared:** 0.999 - This suggests that the model explains 99.9% of the variability in the quantity of timber supplied, indicating a very good fit.
+
+-   **Adjusted R-squared:** 0.998 - Adjusted for the number of predictors, still showing a very strong fit.
+
+### **Coefficients:**
+
+-   **Intercept (Constant):** 129.9739 - This represents the quantity of timber supplied when the cost per unit is zero, which is theoretically significant.
+
+-   **Cost_per_Unit:** -0.7507 - Indicates that for each unit increase in cost, the quantity of timber supplied decreases by approximately 0.75 units. This coefficient is highly significant (p \< 0.001).
+
+### **Observations:**
+
+-   The negative coefficient for **`Cost_per_Unit`** suggests a typical supply behavior where higher costs lead to a decrease in the quantity supplied. This is an expected outcome in economic theory where higher production costs make it less attractive for producers to supply more goods.
+
+-   The high R-squared value indicates that the model fits the data exceptionally well, capturing nearly all the variability in quantity supplied by the cost changes alone.
+
+### **Next Steps:**
+
+Given the strong results from this supply side analysis, we can now proceed to calculate the price elasticity of demand and supply. This will help us understand how responsive the quantity demanded and supplied is to changes in the price of timber.
+
+## Elasticity of Supply and Demand
+
+Let's calculate the price elasticity of demand and supply for timber. Price elasticity measures how responsive the quantity demanded or supplied is to a change in price. This is a key concept in economics that can help in setting prices and understanding market dynamics.
+
+### **Steps for Calculating Elasticity:**
+
+1.  **Price Elasticity of Demand (PED)**:
+
+    -   PED is calculated as the percentage change in quantity demanded divided by the percentage change in price. Using the demand model, we will derive this elasticity at the mean values of price and quantity.
+
+2.  **Price Elasticity of Supply (PES)**:
+
+    -   PES is calculated as the percentage change in quantity supplied divided by the percentage change in price. Using the supply model, we will derive this elasticity at the mean values of cost and quantity.
+
+We'll calculate these elasticities based on the regression coefficients we obtained. For demand, we use the coefficient of **`Price_per_Unit`**, and for supply, we use **`Cost_per_Unit`**. Let's compute these elasticities now.
+
+```{r}
+# Assuming you have already run the regression model for demand
+demand_model <- lm(Quantity_Sold ~ Price_per_Unit + Consumer_Income + Substitute_Price + Complement_Price, data = timber_data)
+
+# Assuming you have already run the regression model for supply
+supply_model <- lm(Quantity_Sold ~ Cost_per_Unit, data = timber_data)
+
+# Calculate average values for price, cost, and quantity
+average_price <- mean(timber_data$Price_per_Unit)
+average_cost <- mean(timber_data$Cost_per_Unit)
+average_quantity <- mean(timber_data$Quantity_Sold)
+
+# Calculate Price Elasticity of Demand using the coefficient of Price_per_Unit
+ped <- coef(demand_model)['Price_per_Unit'] * average_price / average_quantity
+
+# Calculate Price Elasticity of Supply using the coefficient of Cost_per_Unit
+pes <- coef(supply_model)['Cost_per_Unit'] * average_cost / average_quantity
+
+# Print the Price Elasticity of Demand and Supply
+print(paste("Price Elasticity of Demand:", ped))
+print(paste("Price Elasticity of Supply:", pes))
+```
+
+```{r}
+# Create a data frame for elasticities
+elasticities <- data.frame(
+  Type = c("PED", "PES"),
+  Elasticity = c(ped, pes)
+)
+
+# Plotting Elasticities
+ggplot(elasticities, aes(x = Type, y = Elasticity, fill = Type)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Price Elasticity of Demand and Supply", x = "Type", y = "Elasticity Value") +
+  geom_text(aes(label = round(Elasticity, 2)))
+
+```
+
+### **Price Elasticity of Demand (PED):**
+
+-   **PED = -2.25**
+
+    -   This indicates that the quantity demanded is elastic with respect to price changes. A 1% increase in price leads to a 2.25% decrease in the quantity demanded. This level of elasticity suggests that consumers are quite sensitive to price changes when it comes to purchasing timber.
+
+### **Price Elasticity of Supply (PES):**
+
+-   **PES = -1.50**
+
+    -   The quantity supplied is also elastic, meaning that a 1% increase in cost leads to a 1.50% decrease in the quantity supplied. This shows that suppliers are also sensitive to changes in cost.
+
+### **Interpretation:**
+
+-   Both demand and supply in this market are elastic, which means price and cost changes can significantly influence market quantities. This sensitivity to price and cost changes should be carefully considered in pricing strategies, production planning, and policy making to avoid large fluctuations in the market.
