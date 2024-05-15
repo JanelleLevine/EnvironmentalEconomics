@@ -1,7 +1,7 @@
 # Market Metrics: Valuing Ecosystem Services with R
 
 ## Description
-This tutorial demonstrates how to apply a market-based approach to valuing ecosystem services using R. It uses a hypothetical dataset, `timber_data.csv`, generated in R, to guide users through data loading, statistical analysis, and the calculation of economic metrics such as total revenue, average price, consumer surplus, and producer surplus. The dataset does not contain real-world data.
+This tutorial demonstrates how to apply a market-based approach to valuing ecosystem services using R. It uses a hypothetical dataset, `timber_data.csv`, generated in R, to guide users through data loading, statistical analysis, and the calculation of economic metrics such as total revenue, average price, consumer and producer surplus, supply and demand curves, and elasticity. The dataset does not contain real-world data.
 
 ## Repository Contents
 - `timber_data.csv` - Hypothetical dataset created for the purposes of this tutorial; data was generated in R.
