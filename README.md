@@ -22,4 +22,4 @@ To get started with this tutorial:
 Contributions that enhance the tutorial or expand the analyses are welcome. Please fork the repository and submit a pull request with your improvements.
 
 ## Acknowledgements
-While the core content and tutorial structure were developed independently, some writing assistance was provided by ChatGPT, which helped refine the narrative without significantly altering the substantive content.
+While the core content and tutorial structure were developed by me, some writing assistance was provided by ChatGPT.
